@@ -319,7 +319,7 @@ void ComputeParisAtom::compute_peratom()
 
 
 
-    double maxStress = -10000;
+    /*double maxStress = -10000;
     double secondmaxStress = -10000;
     int maxIndex = 0;
     int secondmaxIndex = 0;
@@ -347,11 +347,12 @@ void ComputeParisAtom::compute_peratom()
 
   	atom->lambda[secondmaxIndex] = atom->lambda[secondmaxIndex]-A*pow(1.12*secondmaxStress/volume*sqrt(3.14159*0.012)/1e6,m)*omega*dt;
     if (atom->lambda[secondmaxIndex] <= 0)
-      atom->lambda[secondmaxIndex] = 0;
+      atom->lambda[secondmaxIndex] = 0;*/
+
 
 
   // PARIS LAW
-  /*for (i = 0; i < nlocal; i++){
+  for (i = 0; i < nlocal; i++){
     double stress_comp; 
     if (stress_component==1) stress_comp = stress[i][0];
     else if (stress_component==2) stress_comp = stress[i][1];
@@ -377,7 +378,7 @@ void ComputeParisAtom::compute_peratom()
     if (atom->lambda[i] <= 0)
       atom->lambda[i] = 0;
     
-  }*/
+  }
 
 }
 
