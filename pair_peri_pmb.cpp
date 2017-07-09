@@ -287,8 +287,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
   for (i = 0; i < nlocal; i++){
     if (s0[i]<100)
       chemPotential[i] = s0[i];
-    else
-      chemPotential[i] = 0;
   }
     
 }
