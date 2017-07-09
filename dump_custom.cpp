@@ -1479,6 +1479,9 @@ int DumpCustom::parse_fields(int narg, char **arg)
     } else if (strcmp(arg[iarg],"chemPotential") == 0) {
       pack_choice[i] = &DumpCustom::pack_chemPotential;
       vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"s0") == 0) {
+      pack_choice[i] = &DumpCustom::pack_s0;
+      vtype[i] = DOUBLE;
     } else return iarg;
   }
 
@@ -2854,6 +2857,18 @@ void DumpCustom::pack_chemPotential(int n)
 
   for (int i = 0; i < nchoose; i++) {
     buf[n] = chemPotential[clist[i]];
+    n += size_one;
+  }
+  
+}
+
+void DumpCustom::pack_s0(int n)
+{
+  int *type = atom->type;
+  double *s0 = atom->s0;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = s0[clist[i]];
     n += size_one;
   }
   
