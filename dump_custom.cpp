@@ -1482,6 +1482,9 @@ int DumpCustom::parse_fields(int narg, char **arg)
     } else if (strcmp(arg[iarg],"s0") == 0) {
       pack_choice[i] = &DumpCustom::pack_s0;
       vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"concentration") == 0) {
+      pack_choice[i] = &DumpCustom::pack_concentration;
+      vtype[i] = DOUBLE;
     } else return iarg;
   }
 
@@ -2869,6 +2872,18 @@ void DumpCustom::pack_s0(int n)
 
   for (int i = 0; i < nchoose; i++) {
     buf[n] = s0[clist[i]];
+    n += size_one;
+  }
+  
+}
+
+void DumpCustom::pack_concentration(int n)
+{
+  int *type = atom->type;
+  double *concentration = atom->concentration;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = concentration[clist[i]];
     n += size_one;
   }
   

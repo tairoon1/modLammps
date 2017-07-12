@@ -65,7 +65,7 @@ class AtomVecPeri : public AtomVec {
   int *type,*mask;
   imageint *image;
   double **x,**v,**f;
-  double *vfrac,*rmass,*s0,**x0,*lambda,*temperature,*chemPotential;
+  double *vfrac,*rmass,*s0,**x0,*lambda,*temperature,*chemPotential,*concentration;
 };
 
 }

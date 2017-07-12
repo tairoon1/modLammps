@@ -45,7 +45,7 @@ enum{TYPE,TYPE_FRACTION,MOLECULE,X,Y,Z,CHARGE,MASS,SHAPE,LENGTH,TRI,
      DIPOLE,DIPOLE_RANDOM,QUAT,QUAT_RANDOM,THETA,THETA_RANDOM,ANGMOM,OMEGA,
      DIAMETER,DENSITY,VOLUME,IMAGE,BOND,ANGLE,DIHEDRAL,IMPROPER,
      MESO_E,MESO_CV,MESO_RHO,SMD_MASS_DENSITY,SMD_CONTACT_RADIUS,DPDTHETA,
-     INAME,DNAME,LAMBDA,TEMPERATURE,CHEMPOTENTIAL};
+     INAME,DNAME,LAMBDA,TEMPERATURE,CHEMPOTENTIAL,CONCENTRATION};
 
 #define BIG INT_MAX
 
@@ -500,6 +500,16 @@ void Set::command(int narg, char **arg)
       set(CHEMPOTENTIAL);
       iarg += 2;
 
+    } else if (strcmp(arg[iarg],"concentration") == 0) {
+      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
+      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
+      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      if (!atom->vfrac_flag)
+        error->all(FLERR,"Cannot set this attribute for this atom style");
+      if (dvalue < 0.0) error->all(FLERR,"Invalid concentration in set command");
+      set(CONCENTRATION);
+      iarg += 2;
+
     } else error->all(FLERR,"Illegal set command");
 
     // statistics
@@ -851,6 +861,11 @@ void Set::set(int keyword)
     else if (keyword == CHEMPOTENTIAL) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid chemPotential in set command");
       atom->chemPotential[i] = dvalue;
+    }
+
+    else if (keyword == CONCENTRATION) {
+      if (dvalue < 0.0) error->one(FLERR,"Invalid concentration in set command");
+      atom->concentration[i] = dvalue;
     }
 
     count++;

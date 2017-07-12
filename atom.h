@@ -68,6 +68,7 @@ class Atom : protected Pointers {
   double *lambda;
   double *temperature;
   double *chemPotential;
+  double *concentration;
 
   // USER-EFF and USER-AWPMD packages
 

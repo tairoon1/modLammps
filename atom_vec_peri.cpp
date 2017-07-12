@@ -50,10 +50,10 @@ AtomVecPeri::AtomVecPeri(LAMMPS *lmp) : AtomVec(lmp)
   molecular = 0;
 
   comm_x_only = 0;
-  comm_f_only = 0;
-  size_forward = 7;
+  comm_f_only = 1;
+  size_forward = 8;
   size_reverse = 3;
-  size_border = 14;
+  size_border = 15;
   size_velocity = 3;
   size_data_atom = 7;
   size_data_vel = 4;
@@ -92,6 +92,7 @@ void AtomVecPeri::grow(int n)
   lambda = memory->grow(atom->lambda,nmax,"atom:lambda");
   temperature = memory->grow(atom->temperature,nmax,"atom:temperature");
   chemPotential = memory->grow(atom->chemPotential,nmax,"atom:chemPotential");
+  concentration = memory->grow(atom->concentration,nmax,"atom:concentration");
 
   if (atom->nextra_grow)
     for (int iextra = 0; iextra < atom->nextra_grow; iextra++)
@@ -112,6 +113,7 @@ void AtomVecPeri::grow_reset()
   lambda = atom->lambda;
   temperature = atom->temperature;
   chemPotential = atom->chemPotential;
+  concentration = atom->concentration;
 }
 
 /* ----------------------------------------------------------------------
@@ -140,6 +142,7 @@ void AtomVecPeri::copy(int i, int j, int delflag)
   lambda[j] = lambda[i];
   temperature[j] = temperature[i];
   chemPotential[j] = chemPotential[i];
+  concentration[j] = concentration[i];
 
   if (atom->nextra_grow)
     for (int iextra = 0; iextra < atom->nextra_grow; iextra++)
@@ -166,6 +169,7 @@ int AtomVecPeri::pack_comm(int n, int *list, double *buf,
       buf[m++] = lambda[j];
       buf[m++] = temperature[j];
       buf[m++] = chemPotential[j];
+      buf[m++] = concentration[j];
     }
   } else {
     if (domain->triclinic == 0) {
@@ -186,6 +190,7 @@ int AtomVecPeri::pack_comm(int n, int *list, double *buf,
       buf[m++] = lambda[j];
       buf[m++] = temperature[j];
       buf[m++] = chemPotential[j];
+      buf[m++] = concentration[j];
     }
   }
   return m;
@@ -214,6 +219,7 @@ int AtomVecPeri::pack_comm_vel(int n, int *list, double *buf,
       buf[m++] = lambda[j];
       buf[m++] = temperature[j];
       buf[m++] = chemPotential[j];
+      buf[m++] = concentration[j];
     }
   } else {
     if (domain->triclinic == 0) {
@@ -238,6 +244,7 @@ int AtomVecPeri::pack_comm_vel(int n, int *list, double *buf,
         buf[m++] = lambda[j];
         buf[m++] = temperature[j];
         buf[m++] = chemPotential[j];
+        buf[m++] = concentration[j];
       }
     } else {
       dvx = pbc[0]*h_rate[0] + pbc[5]*h_rate[5] + pbc[4]*h_rate[4];
@@ -252,6 +259,7 @@ int AtomVecPeri::pack_comm_vel(int n, int *list, double *buf,
         buf[m++] = lambda[j];
         buf[m++] = temperature[j];
         buf[m++] = chemPotential[j];
+        buf[m++] = concentration[j];
         if (mask[i] & deform_groupbit) {
           buf[m++] = v[j][0] + dvx;
           buf[m++] = v[j][1] + dvy;
@@ -280,6 +288,7 @@ int AtomVecPeri::pack_comm_hybrid(int n, int *list, double *buf)
     buf[m++] = lambda[j];
     buf[m++] = temperature[j];
     buf[m++] = chemPotential[j];
+    buf[m++] = concentration[j];
   }
   return m;
 }
@@ -300,6 +309,7 @@ void AtomVecPeri::unpack_comm(int n, int first, double *buf)
     lambda[i] = buf[m++];
     temperature[i] = buf[m++];
     chemPotential[i] = buf[m++];
+    concentration[i] = buf[m++];
   }
 }
 
@@ -322,6 +332,7 @@ void AtomVecPeri::unpack_comm_vel(int n, int first, double *buf)
     lambda[i] = buf[m++];
     temperature[i] = buf[m++];
     chemPotential[i] = buf[m++];
+    concentration[i] = buf[m++];
   }
 }
 
@@ -338,6 +349,7 @@ int AtomVecPeri::unpack_comm_hybrid(int n, int first, double *buf)
     lambda[i] = buf[m++];
     temperature[i] = buf[m++];
     chemPotential[i] = buf[m++];
+    concentration[i] = buf[m++];
   return m;
 }
 
@@ -398,6 +410,7 @@ int AtomVecPeri::pack_border(int n, int *list, double *buf,
       buf[m++] = lambda[j];
       buf[m++] = temperature[j];
       buf[m++] = chemPotential[j];
+      buf[m++] = concentration[j];
     }
   } else {
     if (domain->triclinic == 0) {
@@ -425,6 +438,7 @@ int AtomVecPeri::pack_border(int n, int *list, double *buf,
       buf[m++] = lambda[j];
       buf[m++] = temperature[j];
       buf[m++] = chemPotential[j];
+      buf[m++] = concentration[j];
     }
   }
 
@@ -464,6 +478,7 @@ int AtomVecPeri::pack_border_vel(int n, int *list, double *buf,
       buf[m++] = lambda[j];
       buf[m++] = temperature[j];
       buf[m++] = chemPotential[j];
+      buf[m++] = concentration[j];
     }
   } else {
     if (domain->triclinic == 0) {
@@ -495,6 +510,7 @@ int AtomVecPeri::pack_border_vel(int n, int *list, double *buf,
         buf[m++] = lambda[j];
         buf[m++] = temperature[j];
         buf[m++] = chemPotential[j];
+        buf[m++] = concentration[j];
       }
     } else {
       dvx = pbc[0]*h_rate[0] + pbc[5]*h_rate[5] + pbc[4]*h_rate[4];
@@ -525,6 +541,7 @@ int AtomVecPeri::pack_border_vel(int n, int *list, double *buf,
         buf[m++] = lambda[j];
         buf[m++] = temperature[j];
         buf[m++] = chemPotential[j];
+        buf[m++] = concentration[j];
       }
     }
   }
@@ -553,6 +570,7 @@ int AtomVecPeri::pack_border_hybrid(int n, int *list, double *buf)
     buf[m++] = lambda[j];
     buf[m++] = temperature[j];
     buf[m++] = chemPotential[j];
+    buf[m++] = concentration[j];
   }
   return m;
 }
@@ -581,6 +599,7 @@ void AtomVecPeri::unpack_border(int n, int first, double *buf)
     lambda[i] = buf[m++];
     temperature[i] = buf[m++];
     chemPotential[i] = buf[m++];
+    concentration[i] = buf[m++];
   }
 
   if (atom->nextra_border)
@@ -616,6 +635,7 @@ void AtomVecPeri::unpack_border_vel(int n, int first, double *buf)
     lambda[i] = buf[m++];
     temperature[i] = buf[m++];
     chemPotential[i] = buf[m++];
+    concentration[i] = buf[m++];
   }
 
   if (atom->nextra_border)
@@ -641,6 +661,7 @@ int AtomVecPeri::unpack_border_hybrid(int n, int first, double *buf)
     lambda[i] = buf[m++];
     temperature[i] = buf[m++];
     chemPotential[i] = buf[m++];
+    concentration[i] = buf[m++];
   }
   return m;
 }
@@ -673,6 +694,7 @@ int AtomVecPeri::pack_exchange(int i, double *buf)
   buf[m++] = lambda[i];
   buf[m++] = temperature[i];
   buf[m++] = chemPotential[i];
+  buf[m++] = concentration[i];
 
   if (atom->nextra_grow)
     for (int iextra = 0; iextra < atom->nextra_grow; iextra++)
@@ -710,6 +732,7 @@ int AtomVecPeri::unpack_exchange(double *buf)
   lambda[nlocal] = buf[m++];
   temperature[nlocal] = buf[m++];
   chemPotential[nlocal] = buf[m++];
+  concentration[nlocal] = buf[m++];
 
   if (atom->nextra_grow)
     for (int iextra = 0; iextra < atom->nextra_grow; iextra++)
@@ -770,6 +793,7 @@ int AtomVecPeri::pack_restart(int i, double *buf)
   buf[m++] = lambda[i];
   buf[m++] = temperature[i];
   buf[m++] = chemPotential[i];
+  buf[m++] = concentration[i];
 
   if (atom->nextra_restart)
     for (int iextra = 0; iextra < atom->nextra_restart; iextra++)
@@ -813,6 +837,7 @@ int AtomVecPeri::unpack_restart(double *buf)
   lambda[nlocal] = buf[m++];
   temperature[nlocal] = buf[m++];
   chemPotential[nlocal] = buf[m++];
+  concentration[nlocal] = buf[m++];
 
   double **extra = atom->extra;
   if (atom->nextra_store) {
@@ -855,6 +880,7 @@ void AtomVecPeri::create_atom(int itype, double *coord)
   lambda[nlocal] = 1.0;
   temperature[nlocal] = 0.0;
   chemPotential[nlocal] = 0.0;
+  concentration[nlocal] = 0.0;
 
   atom->nlocal++;
 }
@@ -879,6 +905,7 @@ void AtomVecPeri::data_atom(double *coord, imageint imagetmp, char **values)
   lambda[nlocal] = atof(values[4]);
   temperature[nlocal] = atof(values[5]);
   chemPotential[nlocal] = atof(values[6]);
+  concentration[nlocal] = atof(values[7]);
   if (rmass[nlocal] <= 0.0) error->one(FLERR,"Invalid mass value");
 
   x[nlocal][0] = coord[0];
@@ -899,6 +926,7 @@ void AtomVecPeri::data_atom(double *coord, imageint imagetmp, char **values)
   lambda[nlocal] = DBL_MAX;
   temperature[nlocal] = DBL_MAX;
   chemPotential[nlocal] = DBL_MAX;
+  concentration[nlocal] = DBL_MAX;
   atom->nlocal++;
 }
 
@@ -914,6 +942,7 @@ int AtomVecPeri::data_atom_hybrid(int nlocal, char **values)
   lambda[nlocal] = atof(values[2]);
   temperature[nlocal] = atof(values[3]);
   chemPotential[nlocal] = atof(values[4]);
+  concentration[nlocal] = atof(values[5]);
   if (rmass[nlocal] <= 0.0) error->one(FLERR,"Invalid mass value");
 
   s0[nlocal] = DBL_MAX;
@@ -923,6 +952,7 @@ int AtomVecPeri::data_atom_hybrid(int nlocal, char **values)
   lambda[nlocal] = DBL_MAX;
   temperature[nlocal] = DBL_MAX;
   chemPotential[nlocal] = DBL_MAX;
+  concentration[nlocal] = DBL_MAX;
   return 2;
 }
 
@@ -947,6 +977,7 @@ void AtomVecPeri::pack_data(double **buf)
     buf[i][10] = lambda[i];
     buf[i][11] = temperature[i];
     buf[i][12] = chemPotential[i];
+    buf[i][13] = concentration[i];
   }
 }
 
@@ -961,6 +992,7 @@ int AtomVecPeri::pack_data_hybrid(int i, double *buf)
   buf[2] = lambda[i];
   buf[3] = temperature[i];
   buf[4] = chemPotential[i];
+  buf[5] = concentration[i];
   return 2;
 }
 
@@ -1001,6 +1033,7 @@ int AtomVecPeri::property_atom(char *name)
   if (strcmp(name,"lambda") == 0) return 2;
   if (strcmp(name,"temperature") == 0) return 3;
   if (strcmp(name,"chemPotential") == 0) return 4;
+  if (strcmp(name,"concentration") == 0) return 5;
   return -1;
 }
 
@@ -1046,6 +1079,12 @@ void AtomVecPeri::pack_property_atom(int index, double *buf,
       else buf[n] = 0.0;
       n += nvalues;
     }
+  } else if (index == 5) {
+    for (int i = 0; i < nlocal; i++) {
+      if (mask[i] & groupbit) buf[n] = concentration[i];
+      else buf[n] = 0.0;
+      n += nvalues;
+    }
   }
 }
 
@@ -1072,6 +1111,7 @@ bigint AtomVecPeri::memory_usage()
   if (atom->memcheck("lambda")) bytes += memory->usage(lambda,nmax);
   if (atom->memcheck("temperature")) bytes += memory->usage(temperature,nmax);
   if (atom->memcheck("chemPotential")) bytes += memory->usage(chemPotential,nmax);
+  if (atom->memcheck("concentration")) bytes += memory->usage(concentration,nmax);
 
   return bytes;
 }

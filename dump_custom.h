@@ -195,6 +195,7 @@ class DumpCustom : public Dump {
   void pack_temperature(int);
   void pack_chemPotential(int);
   void pack_s0(int);
+  void pack_concentration(int);
 };
 
 }

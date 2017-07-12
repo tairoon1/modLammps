@@ -88,6 +88,7 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   temperature = NULL;
   lambda = NULL;
   chemPotential = NULL;
+  concentration = NULL;
 
   spin = NULL;
   eradius = ervel = erforce = NULL;
@@ -270,6 +271,7 @@ Atom::~Atom()
   memory->destroy(lambda);
   memory->destroy(temperature);
   memory->destroy(chemPotential);
+  memory->destroy(concentration);
 
   memory->destroy(spin);
   memory->destroy(eradius);
@@ -2123,6 +2125,7 @@ void *Atom::extract(char *name)
   if (strcmp(name,"lambda") == 0) return (void *) lambda;
   if (strcmp(name,"temperature") == 0) return (void *) temperature;
   if (strcmp(name,"chemPotential") == 0) return (void *) chemPotential;
+  if (strcmp(name,"concentration") == 0) return (void *) concentration;
 
   if (strcmp(name,"spin") == 0) return (void *) spin;
   if (strcmp(name,"eradius") == 0) return (void *) eradius;
