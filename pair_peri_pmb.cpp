@@ -34,6 +34,7 @@
 #include "neigh_request.h"
 #include "memory.h"
 #include "error.h"
+#include <vector>
 
 using namespace LAMMPS_NS;
 
@@ -196,88 +197,129 @@ void PairPeriPMB::compute(int eflag, int vflag)
   // first = true if this is first neighbor of particle i
 
   bool first;
-
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(rank == 0) {
+    printf ("Hello world! I'm rank %d\n", rank);
+  }
+  
   for (i = 0; i < nlocal; i++) {
-    xtmp = x[i][0];
-    ytmp = x[i][1];
-    ztmp = x[i][2];
-    itype = type[i];
-    jnum = npartner[i];
-    s0_new[i] = DBL_MAX;
-    first = true;
-
-    for (jj = 0; jj < jnum; jj++) {
-      if (partner[i][jj] == 0) continue;
-      j = atom->map(partner[i][jj]);
-
-      // check if lost a partner without first breaking bond
-
-      if (j < 0) {
+    if (lambda[i]==0){
+      xtmp = x[i][0];
+      ytmp = x[i][1];
+      ztmp = x[i][2];
+      jnum = npartner[i];
+      first = true;
+      std::vector<int> trash;
+    
+      for (jj = 0; jj < jnum; jj++){    
+        if (partner[i][jj] == 0) continue;
+        j = atom->map(partner[i][jj]);
+        if (j < 0) {
+          partner[i][jj] = 0;
+          continue;
+        }
+        
         partner[i][jj] = 0;
-        continue;
+
+        delx = xtmp - x[j][0];
+        dely = ytmp - x[j][1];
+        delz = ztmp - x[j][2];
+
+        if (delx>=0){
+          if (dely>0){
+            trash.push_back(jj);
+          }
+        }
       }
 
-      // compute force density, add to PD equation of motion
-
-      delx = xtmp - x[j][0];
-      dely = ytmp - x[j][1];
-      delz = ztmp - x[j][2];
-      if (periodic) domain->minimum_image(delx,dely,delz);
-      rsq = delx*delx + dely*dely + delz*delz;
-      jtype = type[j];
-      delta = cut[itype][jtype];
-      r = sqrt(rsq);
-      dr = r - r0[i][jj];
-
-      // avoid roundoff errors
-
-      if (fabs(dr) < 2.2204e-016) dr = 0.0;
-
-      // scale vfrac[j] if particle j near the horizon
-
-      if ((fabs(r0[i][jj] - delta)) <= half_lc)
-        vfrac_scale = (-1.0/(2*half_lc))*(r0[i][jj]) +
-          (1.0 + ((delta - half_lc)/(2*half_lc) ) );
-      else vfrac_scale = 1.0;
-
-      stretch = dr / r0[i][jj];
-      rk = (kspring[itype][jtype] * vfrac[j]) * vfrac_scale * stretch;
-      if (r > 0.0) fbond = -(rk/r);
-      else fbond = 0.0;
-
-      // DAMAGE MODEL
-      if (lambda[i]==0){
-        //fbond = 0.0;
-        partner[i][jj] = 0;
+      for (unsigned int iii = 0; iii<trash.size(); iii++){
+        for (unsigned int jjj = 0; jjj<trash.size(); jjj++){
+          if (trash[jjj]==trash[iii])
+            continue;
+          partner[ii][trash[jjj]]=0;
+        }
       }
+    }
 
-      f[i][0] += delx*fbond;
-      f[i][1] += dely*fbond;
-      f[i][2] += delz*fbond;
+    else{
+      xtmp = x[i][0];
+      ytmp = x[i][1];
+      ztmp = x[i][2];
+      itype = type[i];
+      jnum = npartner[i];
+      s0_new[i] = DBL_MAX;
+      first = true;
+
+      for (jj = 0; jj < jnum; jj++) {
+        if (partner[i][jj] == 0) continue;
+        j = atom->map(partner[i][jj]);
+
+        // check if lost a partner without first breaking bond
+
+        if (j < 0) {
+          partner[i][jj] = 0;
+          continue;
+        }
+
+        // compute force density, add to PD equation of motion
+
+        delx = xtmp - x[j][0];
+        dely = ytmp - x[j][1];
+        delz = ztmp - x[j][2];
+        if (periodic) domain->minimum_image(delx,dely,delz);
+        rsq = delx*delx + dely*dely + delz*delz;
+        jtype = type[j];
+        delta = cut[itype][jtype];
+        r = sqrt(rsq);
+        dr = r - r0[i][jj];
+
+        // avoid roundoff errors
+
+        if (fabs(dr) < 2.2204e-016) dr = 0.0;
+
+        // scale vfrac[j] if particle j near the horizon
+
+        if ((fabs(r0[i][jj] - delta)) <= half_lc)
+          vfrac_scale = (-1.0/(2*half_lc))*(r0[i][jj]) +
+            (1.0 + ((delta - half_lc)/(2*half_lc) ) );
+        else vfrac_scale = 1.0;
+
+        stretch = dr / r0[i][jj];
+        rk = (kspring[itype][jtype] * vfrac[j]) * vfrac_scale * stretch;
+        if (r > 0.0) fbond = -(rk/r);
+        else fbond = 0.0;
+
+        f[i][0] += delx*fbond;
+        f[i][1] += dely*fbond;
+        f[i][2] += delz*fbond;
 
 
-      // since I-J is double counted, set newton off & use 1/2 factor and I,I
+        // since I-J is double counted, set newton off & use 1/2 factor and I,I
 
-      if (eflag) evdwl = 0.5*rk*dr;
-      if (evflag) ev_tally(i,i,nlocal,0,0.5*evdwl,0.0,0.5*fbond*vfrac[i],delx,dely,delz);
+        if (eflag) evdwl = 0.5*rk*dr;
+        if (evflag) ev_tally(i,i,nlocal,0,0.5*evdwl,0.0,0.5*fbond*vfrac[i],delx,dely,delz);
 
-      // find stretch in bond I-J and break if necessary
-      // use s0 from previous timestep
+        // find stretch in bond I-J and break if necessary
+        // use s0 from previous timestep
 
-      if (stretch > MIN(s0[i],s0[j])) partner[i][jj] = 0;
+        if (stretch > MIN(s0[i],s0[j])) partner[i][jj] = 0;
 
-      // update s0 for next timestep
+        // update s0 for next timestep
 
-      if (first)
-         s0_new[i] = s00[itype][jtype] - (alpha[itype][jtype] * stretch);
-      else
-         s0_new[i] = MAX(s0_new[i],s00[itype][jtype] - (alpha[itype][jtype] * stretch));
-      first = false;
+        if (first)
+           s0_new[i] = s00[itype][jtype] - (alpha[itype][jtype] * stretch);
+        else
+           s0_new[i] = MAX(s0_new[i],s00[itype][jtype] - (alpha[itype][jtype] * stretch));
+        first = false;
 
-
-
+      }
     }
   }
+
+
+    
+  
 
   // store new s0
   for (i = 0; i < nlocal; i++) s0[i] = s0_new[i];
