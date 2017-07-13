@@ -317,40 +317,6 @@ void ComputeParisAtom::compute_peratom()
       stress[i][5] *= nktv2p;
     }
 
-
-
-    /*double maxStress = -10000;
-    double secondmaxStress = -10000;
-    int maxIndex = 0;
-    int secondmaxIndex = 0;
-    // GET MAXIMUM STRESSES! INDEX
-    for (i=0; i < nlocal; i++){
-    	double stress_comp; 
-	    if (stress_component==1) stress_comp = stress[i][0];
-	    else if (stress_component==2) stress_comp = stress[i][1];
-	    else if (stress_component==3) stress_comp = stress[i][2];
-	    else if (stress_component==4) stress_comp = stress[i][3];
-	    else if (stress_component==5) stress_comp = stress[i][4];
-	    else if (stress_component==6) stress_comp = stress[i][5];
-	    stress_comp = MAX(stress_comp,0);
-    	if (stress_comp > maxStress){
-    		secondmaxStress = maxStress;
-    		secondmaxIndex = maxIndex;
-    		maxStress = stress_comp;
-    		maxIndex = i;
-    	}
-    }
-
-    atom->lambda[maxIndex] = atom->lambda[maxIndex]-A*pow(1.12*maxStress/volume*sqrt(3.14159*0.012)/1e6,m)*omega*dt;
-    if (atom->lambda[maxIndex] <= 0)
-      atom->lambda[maxIndex] = 0;
-
-  	atom->lambda[secondmaxIndex] = atom->lambda[secondmaxIndex]-A*pow(1.12*secondmaxStress/volume*sqrt(3.14159*0.012)/1e6,m)*omega*dt;
-    if (atom->lambda[secondmaxIndex] <= 0)
-      atom->lambda[secondmaxIndex] = 0;*/
-
-
-
   // PARIS LAW
   for (i = 0; i < nlocal; i++){
     double stress_comp; 
@@ -362,15 +328,6 @@ void ComputeParisAtom::compute_peratom()
     else if (stress_component==6) stress_comp = stress[i][5];
     stress_comp = MAX(stress_comp,0);
 
-    // if (i==54) {
-    //   printf("Gesamt: %f ",A*pow(stress_comp,m)*omega*dt);
-    //   printf("A: %f ",A);
-    //   printf("m: %f ",m);
-    //   printf("omega: %f ",omega);
-    //   printf("stress_comp: %f ",stress_comp);
-    //   printf("dt: %f ",dt);
-    //   printf("lambda: %f \n",atom->lambda[i]);
-    // }
     
     if (atom->lambda[i] == 0)
       continue;
