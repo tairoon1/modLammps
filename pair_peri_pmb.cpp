@@ -194,53 +194,81 @@ void PairPeriPMB::compute(int eflag, int vflag)
   // partner list contains all bond partners, so I-J appears twice
   // if bond already broken, skip this partner
   // first = true if this is first neighbor of particle i
-
+  
+  double *concentration = atom->concentration;
+  double epstolerance = 0.0002;
+  //tagint *tag = atom->tag;
   std::vector<std::vector<int> > localindexPartner;
+  std::vector<int> indexBrokenPoints;
   for (i = 0; i < nlocal; i++) {
+  	//printf("Tag %i %i\n",i,tag[i]);
+    // if one point is broken
     if (lambda[i]==0){
       xtmp = x[i][0];
       ytmp = x[i][1];
       ztmp = x[i][2];
+      // total number of neighbours
       jnum = npartner[i];
+      // to save all local indices of neighbours
       std::vector<int> localVector;
       for (jj = 0; jj < jnum; jj++){    
+      	// if already broken skip
         if (partner[i][jj] == 0) continue;
+        // look up local index of jj of i
         j = atom->map(partner[i][jj]);
+        
+        // j = -1 means not existent bond
+        // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
         if (j < 0) {
           partner[i][jj] = 0;
           continue;
         }
-        
-        //partner[i][jj] = 0;
 
+        // calculate distances to determine on which side the current neighbour is
         delx = xtmp - x[j][0];
         dely = ytmp - x[j][1];
         delz = ztmp - x[j][2];
 
-        if (delx>=0){
+        // if neighbour is on left side
+        if (delx>=-epstolerance){
+        	// save the local index of current neighbour
           localVector.push_back(j);
-
+          concentration[j] = 100;
         }
       }
       // save local indices of all neighbours which are left of the crack for each broken point
      	localindexPartner.push_back(localVector);
+     	indexBrokenPoints.push_back(i);
     }
 	}
 
+	// if there are broken points
 	if (localindexPartner.size() != 0){
-		// iterate through neighbours, check their neighbours and get the intersection
+		// iterate through broken points
 		for (int k = 0; k < localindexPartner.size(); k++){
+			xtmp = x[indexBrokenPoints[k]][0];
+			ytmp = x[indexBrokenPoints[k]][1];
+			ztmp = x[indexBrokenPoints[k]][2];
+			// iterate through neighbours of current broken point
 			for (i = 0; i < localindexPartner[k].size(); i++){
 				jnum=npartner[localindexPartner[k][i]];
+				// iterate through neighbours of current neighbour point
 				for(jj = 0; jj < jnum; jj++){
+					// if bond between neighbour and its neighbour is gone skip
 					if (partner[localindexPartner[k][i]][jj] == 0) continue;
+					// look up local index of jj of i
 					j = atom->map(partner[localindexPartner[k][i]][jj]);
+	        // j = -1 means not existent bond
+        	// j = 0 means ???
 	        if (j < 0) {
 	          partner[localindexPartner[k][i]][jj] = 0;
 	          continue;
 	        }
+	        // get the intersection
 	        if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end())
-	        	partner[localindexPartner[k][i]][jj] = 0;
+	        	// DELETE ALL BONDS BETWEEN POINTS BETWEEN TWO FACES, ATM ONLY WORKING FOR HORIZONTAL CRACK!!!!
+	        	if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp-epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp+epstolerance))
+	        		partner[localindexPartner[k][i]][jj] = 0;
 
 	        
 				}
