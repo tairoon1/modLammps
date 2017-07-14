@@ -190,18 +190,22 @@ void PairPeriPMB::compute(int eflag, int vflag)
     memory->create(s0_new,nmax,"pair:s0_new");
   }
 
-  // loop over my particles and their partners
-  // partner list contains all bond partners, so I-J appears twice
-  // if bond already broken, skip this partner
-  // first = true if this is first neighbor of particle i
+
+
+  /* In the following all the bonds are broken in order for the crack to grow. The crack grows when a point is lambda = 0.
+	 * 1. Save the local index of broken points and all the local indices of neighbor points on the side of the crack.
+	 * 2. Loop over every broken point and its neighbor points, loop over all the neighbor points and find their neighbor points. 
+	 * 3. Find the intersection of the neighbor points of every broken point with the neighbor points of the neighbor points.
+	 * 4. All the points in this set are checked and bonds are deleted between every two points when they are on different faces of the crack.
+	 * author: tairoon1
+   */
   
   double *concentration = atom->concentration;
+  // used to determine positions to prevent rounding errors
   double epstolerance = 0.0002;
-  //tagint *tag = atom->tag;
   std::vector<std::vector<int> > localindexPartner;
   std::vector<int> indexBrokenPoints;
   for (i = 0; i < nlocal; i++) {
-  	//printf("Tag %i %i\n",i,tag[i]);
     // if one point is broken
     if (lambda[i]==0){
       xtmp = x[i][0];
@@ -277,6 +281,10 @@ void PairPeriPMB::compute(int eflag, int vflag)
 	}
 
 
+	// loop over my particles and their partners
+  // partner list contains all bond partners, so I-J appears twice
+  // if bond already broken, skip this partner
+  // first = true if this is first neighbor of particle i
 
 	bool first;
 
