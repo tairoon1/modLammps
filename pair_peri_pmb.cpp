@@ -199,13 +199,16 @@ void PairPeriPMB::compute(int eflag, int vflag)
 	 * 4. All the points in this set are checked and bonds are deleted between every two points when they are on different faces of the crack.
 	 * author: tairoon1
    */
-  
+  double *chemPotential = atom->chemPotential;
+	int rank;
+  MPI_Comm_rank(world,&rank);
   double *concentration = atom->concentration;
   // used to determine positions to prevent rounding errors
   double epstolerance = 0.0002;
   std::vector<std::vector<int> > localindexPartner;
   std::vector<int> indexBrokenPoints;
   for (i = 0; i < nlocal; i++) {
+    chemPotential[i] = rank;
     // if one point is broken
     if (lambda[i]==0){
       xtmp = x[i][0];
@@ -271,7 +274,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
 	        // get the intersection
 	        if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end())
 	        	// DELETE ALL BONDS BETWEEN POINTS BETWEEN TWO FACES, ATM ONLY WORKING FOR HORIZONTAL CRACK!!!!
-	        	if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp-epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp+epstolerance))
+	        	if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp+epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp-epstolerance))
 	        		partner[localindexPartner[k][i]][jj] = 0;
 
 	        
@@ -370,13 +373,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
 
   // store new s0
   for (i = 0; i < nlocal; i++) s0[i] = s0_new[i];
-
-
-  double *chemPotential = atom->chemPotential;
-  for (i = 0; i < nlocal; i++){
-    if (s0[i]<100)
-      chemPotential[i] = s0[i];
-  }
     
 }
 
