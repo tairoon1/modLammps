@@ -248,7 +248,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
      	indexBrokenPoints.push_back(i);
     }
 	}
-
 	// if there are broken points
 	if (localindexPartner.size() != 0){
 		// iterate through broken points
@@ -272,12 +271,15 @@ void PairPeriPMB::compute(int eflag, int vflag)
 	          continue;
 	        }
 	        // get the intersection
-	        if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end())
+	        if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end()){
 	        	// DELETE ALL BONDS BETWEEN POINTS BETWEEN TWO FACES, ATM ONLY WORKING FOR HORIZONTAL CRACK!!!!
 	        	if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp+epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp-epstolerance))
 	        		partner[localindexPartner[k][i]][jj] = 0;
-
-	        
+	        }
+      		// delete bond between neighbour neighbour to current broken point because broken point is not in intersection
+	        else if (j == indexBrokenPoints[k]){
+	        	partner[localindexPartner[k][i]][jj] = 0;
+	        }
 				}
 			}
 		}
