@@ -331,7 +331,7 @@ void ComputeParisAtom::compute_peratom()
     
     if (atom->lambda[i] == 0)
       continue;
-    atom->lambda[i] = atom->lambda[i]-A*pow(1.12*stress_comp/volume*sqrt(3.14159*0.012)/1e6,m)*omega*dt;
+    atom->lambda[i] = atom->lambda[i]-A*pow(stress_comp/volume/1e6,m)*omega*dt;
     if (atom->lambda[i] <= 0)
       atom->lambda[i] = 0;
     
