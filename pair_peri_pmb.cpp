@@ -238,43 +238,28 @@ void PairPeriPMB::compute(int eflag, int vflag)
         delx = xtmp - x[j][0];
         dely = ytmp - x[j][1];
         // skip points that are not direct neighbors
-        if(sqrt(delx*delx+dely*dely)>0.007071+epstolerance){
+        if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4*neighbor->cutneighmax/4*2)+epstolerance){
           continue;
         }
 
         if(lambda[j]==0){
-          if (delx>epstolerance && dely<-epstolerance){
+          if (delx>epstolerance && dely<-epstolerance)
             neighCrackDirection = LEFTUP;
-            break;
-          }
-          else if (delx>epstolerance && dely>epstolerance){
+          else if (delx>epstolerance && dely>epstolerance)
             neighCrackDirection = LEFTDOWN;
-            break;
-          }
-          else if (delx<-epstolerance && dely<-epstolerance){
+          else if (delx<-epstolerance && dely<-epstolerance)
             neighCrackDirection = RIGHTUP;
-            break;
-          }
-          else if (delx<-epstolerance && dely>epstolerance){
+          else if (delx<-epstolerance && dely>epstolerance)
             neighCrackDirection = RIGHTDOWN;
-            break;
-          }
-          else if (abs(delx)<epstolerance && dely>epstolerance){
+          else if (abs(delx)<epstolerance && dely>epstolerance)
             neighCrackDirection = DOWN;
-            break;
-          }
-          else if (abs(delx)<epstolerance && dely<-epstolerance){
+          else if (abs(delx)<epstolerance && dely<-epstolerance)
             neighCrackDirection = UP;
-            break;
-          }
-          else if (delx<-epstolerance && abs(dely)<epstolerance){
+          else if (delx<-epstolerance && abs(dely)<epstolerance)
             neighCrackDirection = RIGHT;
-            break;
-          }
-          else if (delx>epstolerance && abs(dely)<epstolerance){
+          else if (delx>epstolerance && abs(dely)<epstolerance)
             neighCrackDirection = LEFT;
-            break;
-          }
+          break;
         } 
       }
 

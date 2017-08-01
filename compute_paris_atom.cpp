@@ -50,32 +50,19 @@ ComputeParisAtom::ComputeParisAtom(LAMMPS *lmp, int narg, char **arg) :
   // store temperature ID used by stress computation
   // insure it is valid for temperature computation
 
-  if (strcmp(arg[3],"NULL") == 0) id_temp = NULL;
-  else {
-    int n = strlen(arg[3]) + 1;
-    id_temp = new char[n];
-    strcpy(id_temp,arg[3]);
-
-    int icompute = modify->find_compute(id_temp);
-    if (icompute < 0)
-      error->all(FLERR,"Could not find compute stress/atom temperature ID");
-    if (modify->compute[icompute]->tempflag == 0)
-      error->all(FLERR,
-		 "Compute stress/atom temperature ID does not "
-                 "compute temperature");
-  }
+  id_temp = NULL;
 
   // process optional args
   keflag = 0;
   pairflag = 1;
   bondflag = angleflag = dihedralflag = improperflag = 1;
   kspaceflag = fixflag = 1;
-  stress_component = atoi(arg[4]);
-  A = atof(arg[5]);
-  m = atof(arg[6]);
-  omega = atof(arg[7]);  
-  dt = atof(arg[8]);
-  volume = atof(arg[9]);
+  stress_component = atoi(arg[3]);
+  A = atof(arg[4]);
+  m = atof(arg[5]);
+  omega = atof(arg[6]);  
+  dt = atof(arg[7]);
+  volume = atof(arg[8]);
   nmax = 0;
 }
 
@@ -121,7 +108,7 @@ void ComputeParisAtom::compute_peratom()
   if (atom->nmax > nmax) {
     memory->destroy(stress);
     nmax = atom->nmax;
-    memory->create(stress,nmax,6,"stress/atom:stress");
+    memory->create(stress,nmax,6,"paris/atom:stress");
     array_atom = stress;
   }
 
