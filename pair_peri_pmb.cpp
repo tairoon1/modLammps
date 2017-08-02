@@ -259,6 +259,8 @@ void PairPeriPMB::compute(int eflag, int vflag)
             neighCrackDirection = RIGHT;
           else if (delx>epstolerance && abs(dely)<epstolerance)
             neighCrackDirection = LEFT;
+          else
+            continue;
           break;
         } 
       }
