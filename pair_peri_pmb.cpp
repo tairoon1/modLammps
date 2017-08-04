@@ -251,7 +251,8 @@ void PairPeriPMB::compute(int eflag, int vflag)
             neighCrackDirection = RIGHTUP;
           else if (delx<-epstolerance && dely>epstolerance)
             neighCrackDirection = RIGHTDOWN;
-          else if (abs(delx)<epstolerance && dely>epstolerance)
+          // if neighbor in right left top bottom direction, cannot be diagonal, so overwrite previous direction
+          if (abs(delx)<epstolerance && dely>epstolerance)
             neighCrackDirection = DOWN;
           else if (abs(delx)<epstolerance && dely<-epstolerance)
             neighCrackDirection = UP;

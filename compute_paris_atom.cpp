@@ -308,10 +308,13 @@ void ComputeParisAtom::compute_peratom()
   // PARIS LAW
   // DETERMINE LOCAL MAX STRESS AND INDEX OF ATOM
   int rank;
+  double **x = atom->x;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   double maxStress=-10000,globalMaxStress;
   int maxStressIndex=-1;
   for (i = 0; i < nlocal; i++){
+    if (x[i][2]>0.011 || x[i][2]<0.009)
+         continue;
     double stress_comp; 
     if (stress_component==1) stress_comp = stress[i][0];
     else if (stress_component==2) stress_comp = stress[i][1];
