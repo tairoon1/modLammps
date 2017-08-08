@@ -193,11 +193,14 @@ void PairPeriPMB::compute(int eflag, int vflag)
 
 
   /* In the following all the bonds are broken in order for the crack to grow. The crack grows when a point is lambda = 0.
-   * 1. Save the local index of broken points and all the local indices of neighbor points on the side of the crack.
-   * 2. Loop over every broken point and its neighbor points, loop over all the neighbor points and find their neighbor points. 
-   * 3. Find the intersection of the neighbor points of every broken point with the neighbor points of the neighbor points.
-   * 4. All the points in this set are checked and bonds are deleted between every two points when they are on different faces of the crack.
+   * 1. Find the direction of the crack
+   * 2. Save the local index of broken points and all the local indices of neighbor points on the side of the crack.
+   * 3. Loop over every broken point and its neighbor points, loop over all the neighbor points and find their neighbor points. 
+   * 4. Find the intersection of the neighbor points of every broken point with the neighbor points of the neighbor points.
+   * 5. All the points in this set are checked and bonds are deleted between every two points when they are on different faces of the crack.
+   * BTW: Here, the bonds from the lambda=0 point to his surrounding points are not broken. Those are broken in the loop afterwards!
    * author: tairoon1
+   * date: 8th August, 2017
    */
   double *chemPotential = atom->chemPotential;
   int rank;
@@ -212,6 +215,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
   std::vector<int> directionBrokenPoint;
   for (i = 0; i < nlocal; i++) {
     chemPotential[i] = rank;
+    
     // if one point is broken
     if (lambda[i]==0){
       xtmp = x[i][0];
@@ -219,10 +223,8 @@ void PairPeriPMB::compute(int eflag, int vflag)
       ztmp = x[i][2];
       // total number of neighbours
       jnum = npartner[i];
-      // to save all local indices of neighbours
-      std::vector<int> localVector;
       
-      // check on which side crack is!
+      /*----------------check on which side crack is!-------------*/
       for (jj = 0; jj < jnum; jj++){
         // if already broken skip
         if (partner[i][jj] == 0) continue;
@@ -237,6 +239,10 @@ void PairPeriPMB::compute(int eflag, int vflag)
         }
         delx = xtmp - x[j][0];
         dely = ytmp - x[j][1];
+        delz = ztmp - x[j][2];
+        // skip points that are not on the same xy plane
+        if (abs(delz)>epstolerance)
+          continue;
         // skip points that are not direct neighbors
         if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4*neighbor->cutneighmax/4*2)+epstolerance){
           continue;
@@ -267,6 +273,9 @@ void PairPeriPMB::compute(int eflag, int vflag)
       }
 
 
+      /*----------------find all points which bonds have to be broken-------------*/
+      // to save all local indices of neighbours
+      std::vector<int> localVector;
       for (jj = 0; jj < jnum; jj++){    
         // if already broken skip
         if (partner[i][jj] == 0) continue;
@@ -350,6 +359,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
     }
   }
 
+  /*----------------break the bonds of those points!-------------*/
   // iterate through broken points
   for (int k = 0; k < localindexPartner.size(); k++){
     xtmp = x[indexBrokenPoints[k]][0];
@@ -480,6 +490,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
       f[i][1] += dely*fbond;
       f[i][2] += delz*fbond;
 
+      // break bonds from broken point to every point around it
       if (lambda[i] == 0)
         partner[i][jj] = 0;
 
