@@ -101,6 +101,8 @@ void PairPeriPMB::compute(int eflag, int vflag)
   tagint **partner = ((FixPeriNeigh *) modify->fix[ifix_peri])->partner;
   int *npartner = ((FixPeriNeigh *) modify->fix[ifix_peri])->npartner;
 
+  double *temp = atom->temperature; //Needed for thermo-mechanic formulation
+
   // lc = lattice constant
   // init_style guarantees it's the same in x, y, and z
 
@@ -120,6 +122,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
 
   // loop over neighbors of my atoms
   // need minimg() for x0 difference since not ghosted
+
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
     xtmp = x[i][0];
@@ -175,7 +178,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
           f[j][2] -= delz*fpair;
         }
 
-        if (eflag) evdwl = 0.5*rk*dr;
+        if (eflag) evdwl = 0.5*(rk - thermal_coeff*(temp[i] - Tref))*dr;
         if (evflag) ev_tally(i,j,nlocal,newton_pair,evdwl,0.0,
                              fpair*vfrac[i],delx,dely,delz);
       }
@@ -496,7 +499,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
 
       // since I-J is double counted, set newton off & use 1/2 factor and I,I
 
-      if (eflag) evdwl = 0.5*rk*dr;
+      if (eflag) evdwl = 0.5*(rk - thermal_coeff*(temp[i] - Tref))*dr;
       if (evflag) ev_tally(i,i,nlocal,0,0.5*evdwl,0.0,0.5*fbond*vfrac[i],delx,dely,delz);
 
       // find stretch in bond I-J and break if necessary
@@ -560,7 +563,7 @@ void PairPeriPMB::settings(int narg, char **arg)
 
 void PairPeriPMB::coeff(int narg, char **arg)
 {
-  if (narg != 6) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (narg != 8) error->all(FLERR,"Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -571,6 +574,8 @@ void PairPeriPMB::coeff(int narg, char **arg)
   double cut_one = force->numeric(FLERR,arg[3]);
   double s00_one = force->numeric(FLERR,arg[4]);
   double alpha_one = force->numeric(FLERR,arg[5]);
+  thermal_coeff = force->numeric(FLERR,arg[6]);
+  Tref = force->numeric(FLERR,arg[7]);
 
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {

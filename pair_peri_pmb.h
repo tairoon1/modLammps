@@ -48,6 +48,7 @@ class PairPeriPMB : public Pair {
 
   double *s0_new;
   int nmax;
+  double thermal_coeff, Tref;
 
   void allocate();
 };
