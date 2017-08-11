@@ -310,7 +310,7 @@ void ComputeParisAtom::compute_peratom()
   int rank;
   double **x = atom->x;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  double maxStress=-10000,globalMaxStress;
+  double maxStress=-10000.0,globalMaxStress=-99999.0;
   int maxStressIndex=-1;
   for (i = 0; i < nlocal; i++){
     if (x[i][2]>0.011 || x[i][2]<0.009)
@@ -322,7 +322,7 @@ void ComputeParisAtom::compute_peratom()
     else if (stress_component==4) stress_comp = stress[i][3];
     else if (stress_component==5) stress_comp = stress[i][4];
     else if (stress_component==6) stress_comp = stress[i][5];
-    stress_comp = MAX(stress_comp,0);
+    stress_comp = MAX(stress_comp,0.0);
     if (stress_comp>maxStress){
       maxStress = stress_comp;
       maxStressIndex = i;
@@ -338,9 +338,9 @@ void ComputeParisAtom::compute_peratom()
   // IF GLOBAL == LOCAL, APPLY PARIS LAW
   if(maxStress==globalMaxStress){
     // apply on center
-    atom->lambda[maxStressIndex] = atom->lambda[maxStressIndex]-A*pow(maxStress/volume/1e6,m)*omega*dt;
-    if (atom->lambda[maxStressIndex] <= 0)
-      atom->lambda[maxStressIndex] = 0;
+    atom->lambda[maxStressIndex] = atom->lambda[maxStressIndex]-A*pow(maxStress/volume/1.0e6,m)*omega*dt;
+    if (atom->lambda[maxStressIndex] <= 0.0)
+      atom->lambda[maxStressIndex] = 0.0;
     int jnum = npartner[maxStressIndex];
 
     // apply on neighbours
@@ -356,7 +356,7 @@ void ComputeParisAtom::compute_peratom()
         continue;
       }
 
-      if (atom->lambda[j] == 0)
+      if (atom->lambda[j] == 0.0)
         continue;
       double stress_comp; 
       if (stress_component==1) stress_comp = stress[j][0];
@@ -365,11 +365,11 @@ void ComputeParisAtom::compute_peratom()
       else if (stress_component==4) stress_comp = stress[j][3];
       else if (stress_component==5) stress_comp = stress[j][4];
       else if (stress_component==6) stress_comp = stress[j][5];
-      stress_comp = MAX(stress_comp,0);
+      stress_comp = MAX(stress_comp,0.0);
 
-      atom->lambda[j] = atom->lambda[j]-A*pow(stress_comp/volume/1e6,m)*omega*dt;
-      if (atom->lambda[j] <= 0)
-        atom->lambda[j] = 0;
+      atom->lambda[j] = atom->lambda[j]-A*pow(stress_comp/volume/1.0e6,m)*omega*dt;
+      if (atom->lambda[j] <= 0.0)
+        atom->lambda[j] = 0.0;
     }
   }
 }

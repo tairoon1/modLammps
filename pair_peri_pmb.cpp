@@ -220,7 +220,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
     chemPotential[i] = rank;
     
     // if one point is broken
-    if (lambda[i]==0){
+    if (lambda[i]==0.0){
       xtmp = x[i][0];
       ytmp = x[i][1];
       ztmp = x[i][2];
@@ -247,11 +247,11 @@ void PairPeriPMB::compute(int eflag, int vflag)
         if (abs(delz)>epstolerance)
           continue;
         // skip points that are not direct neighbors
-        if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4*neighbor->cutneighmax/4*2)+epstolerance){
+        if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance){
           continue;
         }
 
-        if(lambda[j]==0){
+        if(lambda[j]==0.0){
           if (delx>epstolerance && dely<-epstolerance)
             neighCrackDirection = LEFTUP;
           else if (delx>epstolerance && dely>epstolerance)
@@ -302,56 +302,56 @@ void PairPeriPMB::compute(int eflag, int vflag)
           if (delx>-epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 100;
+            concentration[j] = 100.0;
           }
         }
         else if (neighCrackDirection==RIGHT){
           if (delx<epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 200;
+            concentration[j] = 200.0;
           }
         }
         else if (neighCrackDirection==UP){
           if (dely<epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 300;
+            concentration[j] = 300.0;
           }
         }
         else if (neighCrackDirection==DOWN){
           if (dely>-epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 400;
+            concentration[j] = 400.0;
           }
         }
         else if (neighCrackDirection==LEFTDOWN){
           if (atan2(-dely,-delx)>3./4*M_PI-epstolerance || atan2(-dely,-delx)<-1./4*M_PI+epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 500;
+            concentration[j] = 500.0;
           }
         }
         else if (neighCrackDirection==LEFTUP){
           if (atan2(-dely,-delx)>1./4*M_PI-epstolerance || atan2(-dely,-delx)<-3./4*M_PI+epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 600;
+            concentration[j] = 600.0;
           }
         }
         else if (neighCrackDirection==RIGHTDOWN){
           if (atan2(-dely,-delx)>-3./4*M_PI-epstolerance && atan2(-dely,-delx)<1./4*M_PI+epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 700;
+            concentration[j] = 700.0;
           }
         }
         else if (neighCrackDirection==RIGHTUP){
           if (atan2(-dely,-delx)>-1./4*M_PI-epstolerance && atan2(-dely,-delx)<3./4*M_PI+epstolerance){
             // save the local index of current neighbour
             localVector.push_back(j);
-            concentration[j] = 800;
+            concentration[j] = 800.0;
           }
         }
       }
@@ -494,7 +494,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
       f[i][2] += delz*fbond;
 
       // break bonds from broken point to every point around it
-      if (lambda[i] == 0)
+      if (lambda[i] == 0.0)
         partner[i][jj] = 0;
 
       // since I-J is double counted, set newton off & use 1/2 factor and I,I
