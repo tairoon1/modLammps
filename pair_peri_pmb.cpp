@@ -244,7 +244,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
         dely = ytmp - x[j][1];
         delz = ztmp - x[j][2];
         // skip points that are not on the same xy plane
-        if (abs(delz)>epstolerance)
+        if (fabs(delz)>epstolerance)
           continue;
         // skip points that are not direct neighbors
         if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance){
@@ -261,13 +261,13 @@ void PairPeriPMB::compute(int eflag, int vflag)
           else if (delx<-epstolerance && dely>epstolerance)
             neighCrackDirection = RIGHTDOWN;
           // if neighbor in right left top bottom direction, cannot be diagonal, so overwrite previous direction
-          if (abs(delx)<epstolerance && dely>epstolerance)
+          if (fabs(delx)<epstolerance && dely>epstolerance)
             neighCrackDirection = DOWN;
-          else if (abs(delx)<epstolerance && dely<-epstolerance)
+          else if (fabs(delx)<epstolerance && dely<-epstolerance)
             neighCrackDirection = UP;
-          else if (delx<-epstolerance && abs(dely)<epstolerance)
+          else if (delx<-epstolerance && fabs(dely)<epstolerance)
             neighCrackDirection = RIGHT;
-          else if (delx>epstolerance && abs(dely)<epstolerance)
+          else if (delx>epstolerance && fabs(dely)<epstolerance)
             neighCrackDirection = LEFT;
           else
             continue;
