@@ -29,6 +29,8 @@
 #include "fix_peri_neigh.h"
 #include "memory.h"
 #include "error.h"
+#include <vector>
+#include <algorithm>
 
 using namespace LAMMPS_NS;
 
@@ -337,7 +339,7 @@ void ComputeParisAtom::compute_peratom()
   int ifix_peri = 3;
   tagint **partner = ((FixPeriNeigh *) modify->fix[ifix_peri])->partner;
   int *npartner = ((FixPeriNeigh *) modify->fix[ifix_peri])->npartner;
-
+  std::vector<int> overlappingIndex;
   // IF GLOBAL == LOCAL, APPLY PARIS LAW
   if(maxStress==globalMaxStress){
     // apply on center
@@ -373,6 +375,7 @@ void ComputeParisAtom::compute_peratom()
       atom->lambda[j] = atom->lambda[j]-A*pow(stress_comp/volume/1.0e6,m)*omega*dt;
       if (atom->lambda[j] <= 0.0)
         atom->lambda[j] = 0.0;
+      overlappingIndex.push_back(j);
     }
   }
 
@@ -396,7 +399,10 @@ void ComputeParisAtom::compute_peratom()
         partner[secondmaxStressIndex][jj] = 0;
         continue;
       }
-
+      // if fatigue was already applied on this atom!
+      if(std::find(overlappingIndex.begin(), overlappingIndex.end(), j) != overlappingIndex.end()) {
+          continue;
+      } 
       if (atom->lambda[j] == 0.0)
         continue;
       double stress_comp; 
