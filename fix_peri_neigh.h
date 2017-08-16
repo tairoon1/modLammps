@@ -58,6 +58,7 @@ class FixPeriNeigh : public Fix {
   void unpack_forward_comm(int, int, double *);
 
   tagint **partner;          // neighs for each atom, stored as global IDs
+  tagint **partnert0;          // neighs for each atom, stored as global IDs
   int *npartner;             // # of neighbors for each atom
  protected:
   int first;                 // flag for first time initialization

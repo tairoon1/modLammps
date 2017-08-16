@@ -99,6 +99,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
   double **x0 = atom->x0;
   double **r0   = ((FixPeriNeigh *) modify->fix[ifix_peri])->r0;
   tagint **partner = ((FixPeriNeigh *) modify->fix[ifix_peri])->partner;
+  tagint **partnert0 = ((FixPeriNeigh *) modify->fix[ifix_peri])->partnert0;
   int *npartner = ((FixPeriNeigh *) modify->fix[ifix_peri])->npartner;
 
   double *temp = atom->temperature; //Needed for thermo-mechanic formulation
