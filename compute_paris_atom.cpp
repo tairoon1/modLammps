@@ -311,7 +311,8 @@ void ComputeParisAtom::compute_peratom()
   double **x = atom->x;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   double maxStress=-10000.0,globalMaxStress=-99999.0;
-  int maxStressIndex=-1;
+  double secondmaxStress=-10000.0;
+  int maxStressIndex=-1,secondmaxStressIndex=0;
   for (i = 0; i < nlocal; i++){
     if (x[i][2]>0.011 || x[i][2]<0.009)
          continue;
@@ -323,7 +324,9 @@ void ComputeParisAtom::compute_peratom()
     else if (stress_component==5) stress_comp = stress[i][4];
     else if (stress_component==6) stress_comp = stress[i][5];
     stress_comp = MAX(stress_comp,0.0);
-    if (stress_comp>maxStress){
+    if (stress_comp>=maxStress-0.000001){
+      secondmaxStress = maxStress;
+      secondmaxStressIndex = maxStressIndex;
       maxStress = stress_comp;
       maxStressIndex = i;
     }    
@@ -353,6 +356,44 @@ void ComputeParisAtom::compute_peratom()
       // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
       if (j < 0) {
         partner[maxStressIndex][jj] = 0;
+        continue;
+      }
+
+      if (atom->lambda[j] == 0.0)
+        continue;
+      double stress_comp; 
+      if (stress_component==1) stress_comp = stress[j][0];
+      else if (stress_component==2) stress_comp = stress[j][1];
+      else if (stress_component==3) stress_comp = stress[j][2];
+      else if (stress_component==4) stress_comp = stress[j][3];
+      else if (stress_component==5) stress_comp = stress[j][4];
+      else if (stress_component==6) stress_comp = stress[j][5];
+      stress_comp = MAX(stress_comp,0.0);
+
+      atom->lambda[j] = atom->lambda[j]-A*pow(stress_comp/volume/1.0e6,m)*omega*dt;
+      if (atom->lambda[j] <= 0.0)
+        atom->lambda[j] = 0.0;
+    }
+  }
+
+    // IF GLOBAL == SECONDLOCAL, APPLY PARIS LAW SYMMETRY!
+  if(secondmaxStress>=globalMaxStress-0.000001){
+    // apply on center
+    atom->lambda[secondmaxStressIndex] = atom->lambda[secondmaxStressIndex]-A*pow(secondmaxStress/volume/1.0e6,m)*omega*dt;
+    if (atom->lambda[secondmaxStressIndex] <= 0.0)
+      atom->lambda[secondmaxStressIndex] = 0.0;
+    int jnum = npartner[secondmaxStressIndex];
+
+    // apply on neighbours
+    for (int jj = 0; jj < jnum; jj++){
+      if (partner[secondmaxStressIndex][jj] == 0) continue;
+        // look up local index of jj of i
+      j = atom->map(partner[secondmaxStressIndex][jj]);
+      
+      // j = -1 means not existent bond
+      // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
+      if (j < 0) {
+        partner[secondmaxStressIndex][jj] = 0;
         continue;
       }
 
