@@ -213,13 +213,13 @@ void PairPeriPMB::compute(int eflag, int vflag)
   // used to determine positions to prevent rounding errors
   double epstolerance = 0.0002;
   enum Direction {LEFT,RIGHT,UP,DOWN,LEFTUP,RIGHTUP,LEFTDOWN,RIGHTDOWN};
-  int neighCrackDirection = 999;
+  
   std::vector<std::vector<int> > localindexPartner;
   std::vector<int> indexBrokenPoints;
   std::vector<int> directionBrokenPoint;
   for (i = 0; i < nlocal; i++) {
     chemPotential[i] = rank;
-    
+    int neighCrackDirection = 999;
     // if one point is broken
     if (lambda[i]==0.0){
       xtmp = x[i][0];
@@ -231,14 +231,14 @@ void PairPeriPMB::compute(int eflag, int vflag)
       /*----------------check on which side crack is!-------------*/
       for (jj = 0; jj < jnum; jj++){
         // if already broken skip
-        if (partner[i][jj] == 0) continue;
+        if (partnert0[i][jj] == 0) continue;
         // look up local index of jj of i
-        j = atom->map(partner[i][jj]);
+        j = atom->map(partnert0[i][jj]);
         
         // j = -1 means not existent bond
         // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
         if (j < 0) {
-          partner[i][jj] = 0;
+          partnert0[i][jj] = 0;
           continue;
         }
         delx = xtmp - x[j][0];
@@ -251,7 +251,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
         if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance){
           continue;
         }
-
+        temp[j]=100;
         if(lambda[j]==0.0){
           if (delx>epstolerance && dely<-epstolerance)
             neighCrackDirection = LEFTUP;
@@ -262,14 +262,22 @@ void PairPeriPMB::compute(int eflag, int vflag)
           else if (delx<-epstolerance && dely>epstolerance)
             neighCrackDirection = RIGHTDOWN;
           // if neighbor in right left top bottom direction, cannot be diagonal, so overwrite previous direction
-          if (fabs(delx)<epstolerance && dely>epstolerance)
+          if (fabs(delx)<epstolerance && dely>epstolerance){
             neighCrackDirection = DOWN;
-          else if (fabs(delx)<epstolerance && dely<-epstolerance)
+            //printf("DOWN %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+          }
+          else if (fabs(delx)<epstolerance && dely<-epstolerance){
             neighCrackDirection = UP;
-          else if (delx<-epstolerance && fabs(dely)<epstolerance)
+            //printf("UP %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+          }
+          else if (delx<-epstolerance && fabs(dely)<epstolerance){
             neighCrackDirection = RIGHT;
-          else if (delx>epstolerance && fabs(dely)<epstolerance)
+            //printf("RIGHT %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+          }
+          else if (delx>epstolerance && fabs(dely)<epstolerance){
             neighCrackDirection = LEFT;
+            //printf("LEFT %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+          }
           else
             continue;
           break;
@@ -282,14 +290,14 @@ void PairPeriPMB::compute(int eflag, int vflag)
       std::vector<int> localVector;
       for (jj = 0; jj < jnum; jj++){    
         // if already broken skip
-        if (partner[i][jj] == 0) continue;
+        if (partnert0[i][jj] == 0) continue;
         // look up local index of jj of i
-        j = atom->map(partner[i][jj]);
+        j = atom->map(partnert0[i][jj]);
         
         // j = -1 means not existent bond
         // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
         if (j < 0) {
-          partner[i][jj] = 0;
+          partnert0[i][jj] = 0;
           continue;
         }
 
@@ -495,8 +503,10 @@ void PairPeriPMB::compute(int eflag, int vflag)
       f[i][2] += delz*fbond;
 
       // break bonds from broken point to every point around it
-      if (lambda[i] == 0.0)
+      if (lambda[i] == 0.0){
         partner[i][jj] = 0;
+        partnert0[i][jj] = 0;
+      }
 
       // since I-J is double counted, set newton off & use 1/2 factor and I,I
 
