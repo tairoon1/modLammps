@@ -231,14 +231,14 @@ void PairPeriPMB::compute(int eflag, int vflag)
       /*----------------check on which side crack is!-------------*/
       for (jj = 0; jj < jnum; jj++){
         // if already broken skip
-        if (partnert0[i][jj] == 0) continue;
+        if (partner[i][jj] == 0) continue;
         // look up local index of jj of i
-        j = atom->map(partnert0[i][jj]);
+        j = atom->map(partner[i][jj]);
         
         // j = -1 means not existent bond
         // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
         if (j < 0) {
-          partnert0[i][jj] = 0;
+          partner[i][jj] = 0;
           continue;
         }
         delx = xtmp - x[j][0];
@@ -251,36 +251,43 @@ void PairPeriPMB::compute(int eflag, int vflag)
         if(sqrt(delx*delx+dely*dely)>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance){
           continue;
         }
-        temp[j]=100;
+
         if(lambda[j]==0.0){
-          if (delx>epstolerance && dely<-epstolerance)
+          if (delx>epstolerance && dely<-epstolerance){
             neighCrackDirection = LEFTUP;
-          else if (delx>epstolerance && dely>epstolerance)
+            continue;
+          }
+          else if (delx>epstolerance && dely>epstolerance){
             neighCrackDirection = LEFTDOWN;
-          else if (delx<-epstolerance && dely<-epstolerance)
+            continue;
+          }
+          else if (delx<-epstolerance && dely<-epstolerance){
             neighCrackDirection = RIGHTUP;
-          else if (delx<-epstolerance && dely>epstolerance)
+            continue;
+          }
+          else if (delx<-epstolerance && dely>epstolerance){
             neighCrackDirection = RIGHTDOWN;
+            continue;
+          }
           // if neighbor in right left top bottom direction, cannot be diagonal, so overwrite previous direction
-          if (fabs(delx)<epstolerance && dely>epstolerance){
+          else if (fabs(delx)<epstolerance && dely>epstolerance){
             neighCrackDirection = DOWN;
-            //printf("DOWN %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+            break;
           }
           else if (fabs(delx)<epstolerance && dely<-epstolerance){
             neighCrackDirection = UP;
-            //printf("UP %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+            break;
           }
           else if (delx<-epstolerance && fabs(dely)<epstolerance){
             neighCrackDirection = RIGHT;
-            //printf("RIGHT %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+            break;
           }
           else if (delx>epstolerance && fabs(dely)<epstolerance){
             neighCrackDirection = LEFT;
-            //printf("LEFT %f %f %f %f %f %f %f %f %f\n", xtmp,ytmp,ztmp,x[j][0],x[j][1],x[j][2],delx,dely,delz);
+            break;
           }
           else
             continue;
-          break;
         } 
       }
 
@@ -290,14 +297,14 @@ void PairPeriPMB::compute(int eflag, int vflag)
       std::vector<int> localVector;
       for (jj = 0; jj < jnum; jj++){    
         // if already broken skip
-        if (partnert0[i][jj] == 0) continue;
+        if (partner[i][jj] == 0) continue;
         // look up local index of jj of i
-        j = atom->map(partnert0[i][jj]);
+        j = atom->map(partner[i][jj]);
         
         // j = -1 means not existent bond
         // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
         if (j < 0) {
-          partnert0[i][jj] = 0;
+          partner[i][jj] = 0;
           continue;
         }
 
