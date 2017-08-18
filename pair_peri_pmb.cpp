@@ -444,7 +444,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
         }
         // delete bond between neighbour neighbour to current broken point because broken point is not in intersection EXCEPT DIRECT NEIGHBOR!!!!!!!!!
         else if (j == indexBrokenPoints[k]){
-          if(sqrt((x[j][0]-x[localindexPartner[k][i]][0])*(x[j][0]-x[localindexPartner[k][i]][0])+(x[j][1]-x[localindexPartner[k][i]][1])*(x[j][1]-x[localindexPartner[k][i]][1]))>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance){
+          if((sqrt((x[j][0]-x[localindexPartner[k][i]][0])*(x[j][0]-x[localindexPartner[k][i]][0])+(x[j][1]-x[localindexPartner[k][i]][1])*(x[j][1]-x[localindexPartner[k][i]][1]))>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance)||(fabs(delz)>epstolerance)){
             partner[localindexPartner[k][i]][jj] = 0;
             //temp[localindexPartner[k][i]]=123;
           }
