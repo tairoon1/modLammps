@@ -404,38 +404,38 @@ void PairPeriPMB::compute(int eflag, int vflag)
         // get the intersection
         if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end()){
           if (directionBrokenPoint[k]==LEFT || directionBrokenPoint[k]==RIGHT){
-            if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp-epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp+epstolerance))
+            if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp+epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp-epstolerance))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==UP || directionBrokenPoint[k]==DOWN){
-            if ((x[localindexPartner[k][i]][0] > xtmp+epstolerance && x[j][0] < xtmp-epstolerance) || (x[localindexPartner[k][i]][0] < xtmp-epstolerance && x[j][0] > xtmp+epstolerance))
+            if ((x[localindexPartner[k][i]][0] > xtmp+epstolerance && x[j][0] < xtmp+epstolerance) || (x[localindexPartner[k][i]][0] < xtmp-epstolerance && x[j][0] > xtmp-epstolerance))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==LEFTUP){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI+epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)<3./4*M_PI-epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)>1./4*M_PI-epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI-epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI-epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>3./4*M_PI+epstolerance) || (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-3./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==LEFTDOWN){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI-epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-3./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-1./4*M_PI+epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI+epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-3./4*M_PI-epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==RIGHTUP){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<1./4*M_PI-epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI-epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>1./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<3./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==RIGHTDOWN){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-1./4*M_PI-epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI-epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-1./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<1./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
