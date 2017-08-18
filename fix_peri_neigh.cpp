@@ -33,7 +33,7 @@
 #include "lattice.h"
 #include "memory.h"
 #include "error.h"
-#include <cstring>
+
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
@@ -59,7 +59,6 @@ FixPeriNeigh::FixPeriNeigh(LAMMPS *lmp,int narg, char **arg) :
   maxpartner = 1;
   npartner = NULL;
   partner = NULL;
-  partnert0 = NULL;
   deviatorextention = NULL;
   deviatorBackextention = NULL;
   deviatorPlasticextension = NULL;
@@ -95,7 +94,6 @@ FixPeriNeigh::~FixPeriNeigh()
 
   memory->destroy(npartner);
   memory->destroy(partner);
-  memory->destroy(partnert0);
   memory->destroy(deviatorextention);
   memory->destroy(deviatorBackextention);
   memory->destroy(deviatorPlasticextension);
@@ -224,7 +222,6 @@ void FixPeriNeigh::setup(int vflag)
   // realloc arrays with correct value for maxpartner
 
   memory->destroy(partner);
-  memory->destroy(partnert0);
   memory->destroy(deviatorextention);
   memory->destroy(deviatorBackextention);
   memory->destroy(deviatorPlasticextension);
@@ -234,7 +231,6 @@ void FixPeriNeigh::setup(int vflag)
 
   npartner = NULL;
   partner = NULL;
-  partnert0 = NULL;
   deviatorextention = NULL;
   deviatorBackextention = NULL;
   deviatorPlasticextension = NULL;
@@ -388,12 +384,6 @@ void FixPeriNeigh::setup(int vflag)
       fprintf(logfile,"  bonds/atom = %g\n",(double)nall/atom->natoms);
     }
   }
-   int nmax = atom->nmax;
-   
-   memcpy(&partnert0[0][0],&partner[0][0],sizeof(tagint)*nmax*maxpartner);
-   //for (i=0;i<nmax;i++)
-   // for (j=0;j<maxpartner;j++)
-   //   partnert0[i][j]=partner[i][j];
 }
 
 /* ----------------------------------------------------------------------
@@ -404,7 +394,6 @@ double FixPeriNeigh::memory_usage()
 {
   int nmax = atom->nmax;
   int bytes = nmax * sizeof(int);
-  bytes += nmax*maxpartner * sizeof(tagint);
   bytes += nmax*maxpartner * sizeof(tagint);
   bytes += nmax*maxpartner * sizeof(double);
   if (isVES) {
@@ -428,7 +417,6 @@ void FixPeriNeigh::grow_arrays(int nmax)
 {
    memory->grow(npartner,nmax,"peri_neigh:npartner");
    memory->grow(partner,nmax,maxpartner,"peri_neigh:partner");
-   memory->grow(partnert0,nmax,maxpartner,"peri_neigh:partnert0");
    if (isVES) {
      memory->grow(deviatorextention,nmax,maxpartner,
                   "peri_neigh:deviatorextention");
