@@ -99,7 +99,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
   double **x0 = atom->x0;
   double **r0   = ((FixPeriNeigh *) modify->fix[ifix_peri])->r0;
   tagint **partner = ((FixPeriNeigh *) modify->fix[ifix_peri])->partner;
-  tagint **partnert0 = ((FixPeriNeigh *) modify->fix[ifix_peri])->partnert0;
   int *npartner = ((FixPeriNeigh *) modify->fix[ifix_peri])->npartner;
 
   double *temp = atom->temperature; //Needed for thermo-mechanic formulation
@@ -293,88 +292,91 @@ void PairPeriPMB::compute(int eflag, int vflag)
 
 
       /*----------------find all points which bonds have to be broken-------------*/
-      // to save all local indices of neighbours
-      std::vector<int> localVector;
-      for (jj = 0; jj < jnum; jj++){    
-        // if already broken skip
-        if (partner[i][jj] == 0) continue;
-        // look up local index of jj of i
-        j = atom->map(partner[i][jj]);
-        
-        // j = -1 means not existent bond
-        // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
-        if (j < 0) {
-          partner[i][jj] = 0;
-          continue;
-        }
+      // If no direction, skip this part!
+      if(neighCrackDirection!=999){
+        // to save all local indices of neighbours
+        std::vector<int> localVector;
+        for (jj = 0; jj < jnum; jj++){    
+          // if already broken skip
+          if (partner[i][jj] == 0) continue;
+          // look up local index of jj of i
+          j = atom->map(partner[i][jj]);
+          
+          // j = -1 means not existent bond
+          // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
+          if (j < 0) {
+            partner[i][jj] = 0;
+            continue;
+          }
 
-        // calculate distances to determine on which side the current neighbour is
-        delx = xtmp - x[j][0];
-        dely = ytmp - x[j][1];
-        delz = ztmp - x[j][2];
+          // calculate distances to determine on which side the current neighbour is
+          delx = xtmp - x[j][0];
+          dely = ytmp - x[j][1];
+          delz = ztmp - x[j][2];
 
-        // if neighbour is on left side
-        if (neighCrackDirection==LEFT){
-          if (delx>-epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 100.0;
+          // if neighbour is on left side
+          if (neighCrackDirection==LEFT){
+            if (delx>-epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 100.0;
+            }
+          }
+          else if (neighCrackDirection==RIGHT){
+            if (delx<epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 200.0;
+            }
+          }
+          else if (neighCrackDirection==UP){
+            if (dely<epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 300.0;
+            }
+          }
+          else if (neighCrackDirection==DOWN){
+            if (dely>-epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 400.0;
+            }
+          }
+          else if (neighCrackDirection==LEFTDOWN){
+            if (atan2(-dely,-delx)>3./4*M_PI-epstolerance || atan2(-dely,-delx)<-1./4*M_PI+epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 500.0;
+            }
+          }
+          else if (neighCrackDirection==LEFTUP){
+            if (atan2(-dely,-delx)>1./4*M_PI-epstolerance || atan2(-dely,-delx)<-3./4*M_PI+epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 600.0;
+            }
+          }
+          else if (neighCrackDirection==RIGHTDOWN){
+            if (atan2(-dely,-delx)>-3./4*M_PI-epstolerance && atan2(-dely,-delx)<1./4*M_PI+epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 700.0;
+            }
+          }
+          else if (neighCrackDirection==RIGHTUP){
+            if (atan2(-dely,-delx)>-1./4*M_PI-epstolerance && atan2(-dely,-delx)<3./4*M_PI+epstolerance){
+              // save the local index of current neighbour
+              localVector.push_back(j);
+              concentration[j] = 800.0;
+            }
           }
         }
-        else if (neighCrackDirection==RIGHT){
-          if (delx<epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 200.0;
-          }
-        }
-        else if (neighCrackDirection==UP){
-          if (dely<epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 300.0;
-          }
-        }
-        else if (neighCrackDirection==DOWN){
-          if (dely>-epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 400.0;
-          }
-        }
-        else if (neighCrackDirection==LEFTDOWN){
-          if (atan2(-dely,-delx)>3./4*M_PI-epstolerance || atan2(-dely,-delx)<-1./4*M_PI+epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 500.0;
-          }
-        }
-        else if (neighCrackDirection==LEFTUP){
-          if (atan2(-dely,-delx)>1./4*M_PI-epstolerance || atan2(-dely,-delx)<-3./4*M_PI+epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 600.0;
-          }
-        }
-        else if (neighCrackDirection==RIGHTDOWN){
-          if (atan2(-dely,-delx)>-3./4*M_PI-epstolerance && atan2(-dely,-delx)<1./4*M_PI+epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 700.0;
-          }
-        }
-        else if (neighCrackDirection==RIGHTUP){
-          if (atan2(-dely,-delx)>-1./4*M_PI-epstolerance && atan2(-dely,-delx)<3./4*M_PI+epstolerance){
-            // save the local index of current neighbour
-            localVector.push_back(j);
-            concentration[j] = 800.0;
-          }
-        }
+        // save local indices of all neighbours which are left of the crack for each broken point
+        localindexPartner.push_back(localVector);
+        indexBrokenPoints.push_back(i);
+        directionBrokenPoint.push_back(neighCrackDirection);
       }
-      // save local indices of all neighbours which are left of the crack for each broken point
-      localindexPartner.push_back(localVector);
-      indexBrokenPoints.push_back(i);
-      directionBrokenPoint.push_back(neighCrackDirection);
     }
   }
 
@@ -402,47 +404,50 @@ void PairPeriPMB::compute(int eflag, int vflag)
         // get the intersection
         if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end()){
           if (directionBrokenPoint[k]==LEFT || directionBrokenPoint[k]==RIGHT){
-            if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp+epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp-epstolerance))
+            if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp-epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp+epstolerance))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==UP || directionBrokenPoint[k]==DOWN){
-            if ((x[localindexPartner[k][i]][0] > xtmp+epstolerance && x[j][0] < xtmp+epstolerance) || (x[localindexPartner[k][i]][0] < xtmp-epstolerance && x[j][0] > xtmp-epstolerance))
+            if ((x[localindexPartner[k][i]][0] > xtmp+epstolerance && x[j][0] < xtmp-epstolerance) || (x[localindexPartner[k][i]][0] < xtmp-epstolerance && x[j][0] > xtmp+epstolerance))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==LEFTUP){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI+epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)<3./4*M_PI-epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)>1./4*M_PI-epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI-epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI-epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>3./4*M_PI+epstolerance) || (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-3./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==LEFTDOWN){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-3./4*M_PI-epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-3./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-1./4*M_PI+epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI+epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>3./4*M_PI-epstolerance) || (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-3./4*M_PI-epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==RIGHTUP){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>1./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<3./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<1./4*M_PI-epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI+epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI-epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>1./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<3./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           else if (directionBrokenPoint[k]==RIGHTDOWN){
-            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI+epstolerance))
+            if ((((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-1./4*M_PI+epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<1./4*M_PI+epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<-1./4*M_PI-epstolerance))) || 
-               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI+epstolerance))
+               (((atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)>-3./4*M_PI-epstolerance) && (atan2(x[localindexPartner[k][i]][1]-ytmp,x[localindexPartner[k][i]][0]-xtmp)<-1./4*M_PI-epstolerance))
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-1./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<1./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
           // DELETE ALL BONDS BETWEEN POINTS BETWEEN TWO FACES, ATM ONLY WORKING FOR HORIZONTAL CRACK!!!!
           
         }
-        // delete bond between neighbour neighbour to current broken point because broken point is not in intersection
+        // delete bond between neighbour neighbour to current broken point because broken point is not in intersection EXCEPT DIRECT NEIGHBOR!!!!!!!!!
         else if (j == indexBrokenPoints[k]){
-          partner[localindexPartner[k][i]][jj] = 0;
+          if(sqrt((x[j][0]-x[localindexPartner[k][i]][0])*(x[j][0]-x[localindexPartner[k][i]][0])+(x[j][1]-x[localindexPartner[k][i]][1])*(x[j][1]-x[localindexPartner[k][i]][1]))>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance){
+            partner[localindexPartner[k][i]][jj] = 0;
+            //temp[localindexPartner[k][i]]=123;
+          }
         }
       }
     }
@@ -512,7 +517,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
       // break bonds from broken point to every point around it
       if (lambda[i] == 0.0){
         partner[i][jj] = 0;
-        partnert0[i][jj] = 0;
       }
 
       // since I-J is double counted, set newton off & use 1/2 factor and I,I
