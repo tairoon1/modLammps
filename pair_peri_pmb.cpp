@@ -482,6 +482,13 @@ void PairPeriPMB::compute(int eflag, int vflag)
         continue;
       }
 
+      // break bonds from broken point to every point around it
+      if (lambda[i] == 0.0){
+        partner[i][jj] = 0;
+        continue;
+      }
+
+
       // compute force density, add to PD equation of motion
 
       delx = xtmp - x[j][0];
@@ -514,11 +521,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
       f[i][1] += dely*fbond;
       f[i][2] += delz*fbond;
 
-      // break bonds from broken point to every point around it
-      if (lambda[i] == 0.0){
-        partner[i][jj] = 0;
-      }
-
+      
       // since I-J is double counted, set newton off & use 1/2 factor and I,I
 
       if (eflag) evdwl = 0.5*(rk - thermal_coeff*(temp[i] - Tref))*dr;
