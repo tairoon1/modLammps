@@ -314,6 +314,10 @@ void PairPeriPMB::compute(int eflag, int vflag)
           dely = ytmp - x[j][1];
           delz = ztmp - x[j][2];
 
+          // do not break bonds for particles in same z-axis for crackdirection purpose
+          if ((fabs(delx)<epstolerance)&&(fabs(dely)<epstolerance))
+            continue;
+
           // if neighbour is on left side
           if (neighCrackDirection==LEFT){
             if (delx>-epstolerance){
