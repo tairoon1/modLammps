@@ -314,10 +314,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
           dely = ytmp - x[j][1];
           delz = ztmp - x[j][2];
 
-          // do not break bonds for particles in same z-axis for crackdirection purpose
-          if ((fabs(delx)<epstolerance)&&(fabs(dely)<epstolerance))
-            continue;
-
           // if neighbour is on left side
           if (neighCrackDirection==LEFT){
             if (delx>-epstolerance){
@@ -443,15 +439,10 @@ void PairPeriPMB::compute(int eflag, int vflag)
             && ((atan2(x[j][1]-ytmp,x[j][0]-xtmp)>-1./4*M_PI+epstolerance) && (atan2(x[j][1]-ytmp,x[j][0]-xtmp)<1./4*M_PI+epstolerance))))
               partner[localindexPartner[k][i]][jj] = 0;
           }
-          // DELETE ALL BONDS BETWEEN POINTS BETWEEN TWO FACES, ATM ONLY WORKING FOR HORIZONTAL CRACK!!!!
-          
         }
         // delete bond between neighbour neighbour to current broken point because broken point is not in intersection EXCEPT DIRECT NEIGHBOR!!!!!!!!!
         else if (j == indexBrokenPoints[k]){
-          if((sqrt((x[j][0]-x[localindexPartner[k][i]][0])*(x[j][0]-x[localindexPartner[k][i]][0])+(x[j][1]-x[localindexPartner[k][i]][1])*(x[j][1]-x[localindexPartner[k][i]][1]))>sqrt(neighbor->cutneighmax/4.0*neighbor->cutneighmax/4.0*2.0)+epstolerance)||(fabs(x[j][2]-x[localindexPartner[k][i]][2])>epstolerance)){
             partner[localindexPartner[k][i]][jj] = 0;
-            //temp[localindexPartner[k][i]]=123;
-          }
         }
       }
     }
