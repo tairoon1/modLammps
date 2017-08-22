@@ -208,6 +208,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
   double *chemPotential = atom->chemPotential;
   int rank;
   MPI_Comm_rank(world,&rank);
+  // This is momentarily used for debugging purpose! To see the points and which side was determined!
   double *concentration = atom->concentration;
   // used to determine positions to prevent rounding errors
   double epstolerance = 0.0002;
@@ -221,6 +222,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
     int neighCrackDirection = 999;
     // if one point is broken
     if (lambda[i]==0.0){
+      // coordinates of broken point
       xtmp = x[i][0];
       ytmp = x[i][1];
       ztmp = x[i][2];
@@ -228,21 +230,23 @@ void PairPeriPMB::compute(int eflag, int vflag)
       jnum = npartner[i];
       
       /*----------------check on which side crack is!-------------*/
+      // Check if there are broken points nearby to determine in which direction the crack is propagatin.
+      // THIS DOES NOT WORK VERY WELL!!! SHOULD CONSIDER A DIFFERENT ALGORITHM FOR THE DIRECTION DETECTION.
       for (jj = 0; jj < jnum; jj++){
         // if already broken skip
         if (partner[i][jj] == 0) continue;
         // look up local index of jj of i
         j = atom->map(partner[i][jj]);
-        
-        // j = -1 means not existent bond
-        // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
         if (j < 0) {
           partner[i][jj] = 0;
           continue;
         }
+        // distance to neighbor point
         delx = xtmp - x[j][0];
         dely = ytmp - x[j][1];
         delz = ztmp - x[j][2];
+        
+
         // skip points that are not on the same xy plane
         if (fabs(delz)>epstolerance)
           continue;
@@ -251,6 +255,8 @@ void PairPeriPMB::compute(int eflag, int vflag)
           continue;
         }
 
+        // if neighbor point is broken, check on which side and determine where the crack comes from
+        // THIS IS A BIG PROBLEM WHEN THE CRACK CHANGES DIRECTION SINCE THE CONNECTION AND FINDING THE POINTS BOTH DEPEND ON partner
         if(lambda[j]==0.0){
           if (delx>epstolerance && dely<-epstolerance){
             neighCrackDirection = LEFTUP;
@@ -285,13 +291,14 @@ void PairPeriPMB::compute(int eflag, int vflag)
             neighCrackDirection = LEFT;
             break;
           }
+          // if there is no nearby point
           else
             continue;
         } 
       }
 
 
-      /*----------------find all points which bonds have to be broken-------------*/
+      /*----------------find all points where bonds have to be broken-------------*/
       // If no direction, skip this part!
       if(neighCrackDirection!=999){
         // to save all local indices of neighbours
@@ -301,9 +308,6 @@ void PairPeriPMB::compute(int eflag, int vflag)
           if (partner[i][jj] == 0) continue;
           // look up local index of jj of i
           j = atom->map(partner[i][jj]);
-          
-          // j = -1 means not existent bond
-          // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
           if (j < 0) {
             partner[i][jj] = 0;
             continue;
@@ -314,7 +318,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
           dely = ytmp - x[j][1];
           delz = ztmp - x[j][2];
 
-          // if neighbour is on left side
+          // THE CONCENTRATION IS JUST FOR DEBUGGING PURPOSES TO SEE IF THE CRACKDIRECTION AND THE ADDED POINTS MAKE SENSE!
           if (neighCrackDirection==LEFT){
             if (delx>-epstolerance){
               // save the local index of current neighbour
@@ -372,7 +376,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
             }
           }
         }
-        // save local indices of all neighbours which are left of the crack for each broken point
+        // save local indices of all neighbours which bonds have to be broken
         localindexPartner.push_back(localVector);
         indexBrokenPoints.push_back(i);
         directionBrokenPoint.push_back(neighCrackDirection);
@@ -383,6 +387,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
   /*----------------break the bonds of those points!-------------*/
   // iterate through broken points
   for (int k = 0; k < localindexPartner.size(); k++){
+    // those are the coordinates
     xtmp = x[indexBrokenPoints[k]][0];
     ytmp = x[indexBrokenPoints[k]][1];
     ztmp = x[indexBrokenPoints[k]][2];
@@ -401,7 +406,8 @@ void PairPeriPMB::compute(int eflag, int vflag)
           partner[localindexPartner[k][i]][jj] = 0;
           continue;
         }
-        // get the intersection
+        // if the neighborpoint of the neighbor is also a neighbor point of the broken point, break the bonds by setting partner = 0
+        // COULD USE A NEW 2D LIST? lambdaList = 1 or 0 and can be multiplied with bondforce
         if (std::find(localindexPartner[k].begin(), localindexPartner[k].end(), j) != localindexPartner[k].end()){
           if (directionBrokenPoint[k]==LEFT || directionBrokenPoint[k]==RIGHT){
             if ((x[localindexPartner[k][i]][1] > ytmp+epstolerance && x[j][1] < ytmp+epstolerance) || (x[localindexPartner[k][i]][1] < ytmp-epstolerance && x[j][1] > ytmp-epstolerance))
@@ -440,7 +446,7 @@ void PairPeriPMB::compute(int eflag, int vflag)
               partner[localindexPartner[k][i]][jj] = 0;
           }
         }
-        // delete bond between neighbour neighbour to current broken point because broken point is not in intersection EXCEPT DIRECT NEIGHBOR!!!!!!!!!
+        // delete bond between neighbour neighbour to current broken point because broken point is not in its own horizon
         else if (j == indexBrokenPoints[k]){
             partner[localindexPartner[k][i]][jj] = 0;
         }

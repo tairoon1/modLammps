@@ -307,17 +307,14 @@ void ComputeParisAtom::compute_peratom()
       stress[i][5] *= nktv2p;
     }
 
-  // PARIS LAW
-  // DETERMINE LOCAL MAX STRESS AND INDEX OF ATOM
+  // FATIGUE LAW
   int rank;
-  double **x = atom->x;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   double maxStress=-10000.0,globalMaxStress=-99999.0;
   double secondmaxStress=-10000.0,thirdmaxStress=-10000.0,fourthmaxStress=-10000.0;
   int maxStressIndex=-1,secondmaxStressIndex=0,thirdmaxStressIndex=0,fourthmaxStressIndex=0;
+  // determine max stress of each particle on each thread
   for (i = 0; i < nlocal; i++){
-    //if (x[i][2]>0.011 || x[i][2]<0.009)
-    //     continue;
     double stress_comp; 
     if (stress_component==1) stress_comp = stress[i][0];
     else if (stress_component==2) stress_comp = stress[i][1];
@@ -338,35 +335,37 @@ void ComputeParisAtom::compute_peratom()
     }    
   }
 
-  // DETERMINE GLOBAL MAX STRESS
+  // DETERMINE GLOBAL MAX STRESS ON EACH THREAD
   MPI_Allreduce(&maxStress,&globalMaxStress,1,MPI_DOUBLE,MPI_MAX,world);
+  // This number is hard coded? Should be the number of fix_peri_neigh
   int ifix_peri = 3;
   tagint **partner = ((FixPeriNeigh *) modify->fix[ifix_peri])->partner;
   int *npartner = ((FixPeriNeigh *) modify->fix[ifix_peri])->npartner;
+  // This vector is used to prevent multiple appliance of fatigue law on one atom
   std::vector<int> overlappingIndex;
-  // IF GLOBAL == LOCAL, APPLY PARIS LAW
+
+  // if global maxstress == globalMaxStress means that that stress is on this thread
   if(maxStress==globalMaxStress){
-    // apply on center
+    // apply fatigue on the center point
     atom->lambda[maxStressIndex] = atom->lambda[maxStressIndex]-A*pow(maxStress/volume/1.0e6,m)*omega*dt;
     if (atom->lambda[maxStressIndex] <= 0.0)
       atom->lambda[maxStressIndex] = 0.0;
     int jnum = npartner[maxStressIndex];
 
-    // apply on neighbours
+    // apply fatigue on neighbours
     for (int jj = 0; jj < jnum; jj++){
       if (partner[maxStressIndex][jj] == 0) continue;
         // look up local index of jj of i
       j = atom->map(partner[maxStressIndex][jj]);
-      
-      // j = -1 means not existent bond
-      // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
       if (j < 0) {
         partner[maxStressIndex][jj] = 0;
         continue;
       }
 
+      // if point is broken
       if (atom->lambda[j] == 0.0)
         continue;
+
       double stress_comp; 
       if (stress_component==1) stress_comp = stress[j][0];
       else if (stress_component==2) stress_comp = stress[j][1];
@@ -379,13 +378,14 @@ void ComputeParisAtom::compute_peratom()
       atom->lambda[j] = atom->lambda[j]-A*pow(stress_comp/volume/1.0e6,m)*omega*dt;
       if (atom->lambda[j] <= 0.0)
         atom->lambda[j] = 0.0;
+      // add the index so that law is not applied multiple times on one particle
       overlappingIndex.push_back(j);
     }
   }
 
-    // IF GLOBAL == SECONDLOCAL, APPLY PARIS LAW SYMMETRY!
+    // if there is another point with same stress, symmetry for example because of 3D
   if(secondmaxStress>=globalMaxStress-0.000001){
-    // apply on center
+    // apply fatigue on center point
     atom->lambda[secondmaxStressIndex] = atom->lambda[secondmaxStressIndex]-A*pow(secondmaxStress/volume/1.0e6,m)*omega*dt;
     if (atom->lambda[secondmaxStressIndex] <= 0.0)
       atom->lambda[secondmaxStressIndex] = 0.0;
@@ -396,14 +396,11 @@ void ComputeParisAtom::compute_peratom()
       if (partner[secondmaxStressIndex][jj] == 0) continue;
         // look up local index of jj of i
       j = atom->map(partner[secondmaxStressIndex][jj]);
-      
-      // j = -1 means not existent bond
-      // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
       if (j < 0) {
         partner[secondmaxStressIndex][jj] = 0;
         continue;
       }
-      // if fatigue was already applied on this atom!
+      // if fatigue was already applied on this atom, skip!
       if(std::find(overlappingIndex.begin(), overlappingIndex.end(), j) != overlappingIndex.end()) {
           continue;
       } 
@@ -424,9 +421,9 @@ void ComputeParisAtom::compute_peratom()
       overlappingIndex.push_back(j);
     }
   }
-   // IF GLOBAL == SECONDLOCAL, APPLY PARIS LAW SYMMETRY!
+  // if there is another point with same stress, two symmetries for example because of 3D and centercrack
   if(thirdmaxStress>=globalMaxStress-0.000001){
-    // apply on center
+    // apply fatigue on center point
     atom->lambda[thirdmaxStressIndex] = atom->lambda[thirdmaxStressIndex]-A*pow(thirdmaxStress/volume/1.0e6,m)*omega*dt;
     if (atom->lambda[thirdmaxStressIndex] <= 0.0)
       atom->lambda[thirdmaxStressIndex] = 0.0;
@@ -437,14 +434,11 @@ void ComputeParisAtom::compute_peratom()
       if (partner[thirdmaxStressIndex][jj] == 0) continue;
         // look up local index of jj of i
       j = atom->map(partner[thirdmaxStressIndex][jj]);
-      
-      // j = -1 means not existent bond
-      // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
       if (j < 0) {
         partner[thirdmaxStressIndex][jj] = 0;
         continue;
       }
-      // if fatigue was already applied on this atom!
+      // if fatigue was already applied on this atom, skip!
       if(std::find(overlappingIndex.begin(), overlappingIndex.end(), j) != overlappingIndex.end()) {
           continue;
       } 
@@ -465,9 +459,10 @@ void ComputeParisAtom::compute_peratom()
       overlappingIndex.push_back(j);
     }
   }
-   // IF GLOBAL == SECONDLOCAL, APPLY PARIS LAW SYMMETRY!
+
+  // if there is another point with same stress, two symmetries for example because of 3D and centercrack
   if(fourthmaxStress>=globalMaxStress-0.000001){
-    // apply on center
+    // apply fatigue on center point
     atom->lambda[fourthmaxStressIndex] = atom->lambda[fourthmaxStressIndex]-A*pow(fourthmaxStress/volume/1.0e6,m)*omega*dt;
     if (atom->lambda[fourthmaxStressIndex] <= 0.0)
       atom->lambda[fourthmaxStressIndex] = 0.0;
@@ -478,14 +473,11 @@ void ComputeParisAtom::compute_peratom()
       if (partner[fourthmaxStressIndex][jj] == 0) continue;
         // look up local index of jj of i
       j = atom->map(partner[fourthmaxStressIndex][jj]);
-      
-      // j = -1 means not existent bond
-      // j = 0 means ??? MAYBE ON ANOTHER PROCESSOR???
       if (j < 0) {
         partner[fourthmaxStressIndex][jj] = 0;
         continue;
       }
-      // if fatigue was already applied on this atom!
+      // if fatigue was already applied on this atom, skip!
       if(std::find(overlappingIndex.begin(), overlappingIndex.end(), j) != overlappingIndex.end()) {
           continue;
       } 
