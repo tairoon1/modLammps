@@ -309,12 +309,16 @@ void ComputeParisAtom::compute_peratom()
 
   // FATIGUE LAW
   int rank;
+  double **x = atom->x;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   double maxStress=-10000.0,globalMaxStress=-99999.0;
   double secondmaxStress=-10000.0,thirdmaxStress=-10000.0,fourthmaxStress=-10000.0;
   int maxStressIndex=-1,secondmaxStressIndex=0,thirdmaxStressIndex=0,fourthmaxStressIndex=0;
   // determine max stress of each particle on each thread
   for (i = 0; i < nlocal; i++){
+    // only check middle plane for max
+    if (x[i][2]>0.011 || x[i][2]<0.009)
+      continue;
     double stress_comp; 
     if (stress_component==1) stress_comp = stress[i][0];
     else if (stress_component==2) stress_comp = stress[i][1];
